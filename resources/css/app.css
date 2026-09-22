@@ -1,9 +1,55 @@
-@import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+@layer base {
+    html {
+        @apply antialiased;
+    }
+    body {
+        @apply bg-canvas text-ink font-sans;
+    }
+}
+
+@layer components {
+    .type-display { @apply text-5xl font-bold leading-tight; }
+    .type-h1      { @apply text-4xl font-bold; }
+    .type-h2      { @apply text-[36px] font-bold; }
+    .type-h3      { @apply text-3xl font-bold; }
+    .type-h4      { @apply text-2xl font-bold; }
+    .type-h5      { @apply text-xl  font-bold; }
+    .type-body    { @apply text-base leading-[1.5]; }
+
+    .btn-pill {
+        @apply inline-flex items-center justify-center gap-2 shape-card px-6 py-3 font-medium transition;
+    }
+    .btn-primary {
+        @apply btn-pill bg-brand text-canvas hover:bg-brand-hover;
+    }
+    .btn-secondary {
+        @apply btn-pill bg-surface text-ink hover:bg-ink hover:text-canvas;
+    }
+    .btn-outline {
+        @apply btn-pill border border-ink bg-canvas text-ink hover:bg-ink hover:text-canvas;
+    }
+
+    .section-heading {
+        @apply relative pb-2 type-h2 after:absolute after:bottom-0 after:left-0 after:h-[5px] after:w-full after:bg-brand;
+    }
+
+    .input-underline {
+        @apply w-full border-0 border-b border-ink/40 bg-transparent px-0 py-2 text-ink placeholder:text-ink/40 focus:border-brand focus:ring-0;
+    }
+
+    .card-surface {
+        @apply rounded-xl bg-surface;
+    }
+
+    /* Signature MokiTan container shape: 10px radius on 3 corners, sharp top-right. */
+    .shape-card {
+        border-radius: 10px;
+        border-top-right-radius: 0;
+    }
 }

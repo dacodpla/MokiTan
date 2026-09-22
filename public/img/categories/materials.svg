@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid slice">
+    <rect width="600" height="200" fill="#c9c9d0"/>
+    <g>
+        <ellipse cx="120" cy="140" rx="60" ry="12" fill="#3a3a42" opacity=".3"/>
+        <rect x="90" y="60" width="60" height="80" rx="4" fill="#4a4a52"/>
+        <rect x="105" y="45" width="30" height="18" rx="3" fill="#2a2a30"/>
+        <rect x="115" y="30" width="10" height="18" fill="#2a2a30"/>
+    </g>
+    <g transform="translate(220 30)">
+        <rect x="0" y="60" width="180" height="110" rx="6" fill="#3a3a42"/>
+        <rect x="8" y="70" width="164" height="14" fill="#6a6a72"/>
+        <rect x="8" y="94" width="120" height="10" fill="#6a6a72"/>
+        <rect x="8" y="112" width="140" height="10" fill="#6a6a72"/>
+    </g>
+    <g transform="translate(440 40)">
+        <polygon points="0,140 60,20 120,140" fill="#2a2a30"/>
+        <rect x="50" y="80" width="20" height="60" fill="#4a4a52"/>
+    </g>
+</svg>
