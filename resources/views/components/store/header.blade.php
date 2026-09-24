@@ -3,7 +3,27 @@
     $activeSlug = request()->segment(2);
 @endphp
 
-<header class="bg-canvas">
+<header
+    x-data="{
+        show: true,
+        lastY: 0,
+        onScroll() {
+            const y = window.scrollY;
+            const delta = y - this.lastY;
+            if (y < 40) {
+                this.show = true;
+            } else if (delta > 8) {
+                this.show = false;
+            } else if (delta < -8) {
+                this.show = true;
+            }
+            this.lastY = y;
+        },
+    }"
+    x-init="lastY = window.scrollY"
+    @scroll.window.passive="onScroll()"
+    :class="show ? 'translate-y-0' : '-translate-y-full'"
+    class="sticky top-0 z-40 transition-transform duration-300 ease-out will-change-transform">
     <div class="container mx-auto pt-8 pb-6">
         {{-- Logo, centered --}}
         <div class="flex justify-center">
