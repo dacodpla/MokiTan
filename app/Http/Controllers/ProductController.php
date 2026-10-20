@@ -7,9 +7,9 @@ use Illuminate\Contracts\View\View;
 
 class ProductController extends Controller
 {
-    public function show(Product $product): View
+    public function show(int $id): View
     {
-        $product->load(['category', 'recommendations']);
+        $product = Product::with(['category', 'recommendations'])->findOrFail($id);
 
         return view('products.show', [
             'product' => $product,

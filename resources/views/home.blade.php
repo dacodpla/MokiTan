@@ -16,7 +16,7 @@
                         {{ \Illuminate\Support\Str::limit($featured->description, 340) }}
                     </p>
                     <div class="mt-8">
-                        <a href="{{ route('products.show', $featured->slug) }}" class="btn-primary inline-flex">
+                        <a href="{{ route('products.show', $featured->id) }}" class="btn-primary inline-flex">
                             Check it out
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M7 17L17 7M9 7h8v8"/>

@@ -90,7 +90,7 @@ npm run dev
 
 Open <http://127.0.0.1:8000>.
 
-### Default credentials
+### Default credentialsle
 
 The seeder creates one user for testing:
 

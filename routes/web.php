@@ -15,7 +15,7 @@ Route::get('/catalog', fn () => view('catalog.index'))->name('catalog');
 Route::get('/catalog/{category:slug}', fn (Category $category) => view('catalog.index', ['categorySlug' => $category->slug]))
     ->name('catalog.category');
 
-Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/detail/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('products.show');
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');

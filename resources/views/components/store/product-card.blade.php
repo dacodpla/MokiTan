@@ -1,6 +1,6 @@
 @props(['product'])
 
-<a href="{{ route('products.show', $product->slug) }}"
+<a href="{{ route('products.show', $product->id) }}"
    class="group block overflow-hidden shape-card">
     {{-- Image on top (surface gray) --}}
     <div class="aspect-[4/3] bg-surface overflow-hidden">

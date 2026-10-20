@@ -2,7 +2,7 @@
     <a href="{{ route('admin.products.index') }}" class="type-body text-brand hover:underline">← All products</a>
     <div class="flex items-baseline justify-between mt-2 mb-6">
         <h1 class="type-h1">Edit: {{ $product->name }}</h1>
-        <a href="{{ route('products.show', $product->slug) }}" target="_blank"
+        <a href="{{ route('products.show', $product->id) }}" target="_blank"
            class="type-body text-brand hover:underline">View on store ↗</a>
     </div>
 

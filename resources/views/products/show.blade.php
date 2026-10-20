@@ -2,9 +2,11 @@
     <x-slot name="title">{{ $product->name }} — Moki-Tan</x-slot>
 
     <div class="container mx-auto py-10">
-        <a href="{{ url()->previous() }}" class="type-body text-brand hover:underline inline-flex items-center gap-1 mb-6">
-            ← Back
-        </a>
+        <x-store.breadcrumb :items="[
+            ['label' => 'Home', 'url' => route('home')],
+            ['label' => $product->category->name, 'url' => route('catalog.category', $product->category->slug)],
+            ['label' => $product->name],
+        ]" />
 
         <div class="grid gap-10 lg:grid-cols-2">
             <div class="rounded-xl bg-surface aspect-square overflow-hidden">
@@ -50,7 +52,7 @@
                         <ul class="grid gap-2">
                             @foreach ($product->recommendations as $rec)
                                 <li class="flex items-center justify-between rounded-lg border border-ink/10 p-3">
-                                    <a href="{{ route('products.show', $rec->slug) }}" class="type-body hover:text-brand">
+                                    <a href="{{ route('products.show', $rec->id) }}" class="type-body hover:text-brand">
                                         {{ $rec->name }} <span class="text-ink/50">— {{ $rec->brand }}</span>
                                     </a>
                                     <span class="type-body font-bold">{{ \App\Support\Money::idr($rec->price) }}</span>
