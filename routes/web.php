@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
@@ -32,6 +33,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/', fn () => redirect()->route('admin.products.index'))->name('dashboard');
         Route::resource('products', App\Http\Controllers\Admin\ProductController::class)
             ->except('show');
+
+        Route::get('/transactions', [TransactionController::class, 'index'])
+            ->name('transactions.index');
+        Route::post('/transactions/{id}/status', [TransactionController::class, 'updateStatus'])
+            ->whereNumber('id')
+            ->name('transactions.status');
     });
 });
 

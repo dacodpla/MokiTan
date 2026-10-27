@@ -2,10 +2,20 @@
     <x-slot name="title">Payment Success — Moki-Tan</x-slot>
 
     <div class="container mx-auto py-16 max-w-2xl">
+        <x-store.breadcrumb :items="[
+            ['label' => 'Home', 'url' => route('home')],
+            ['label' => 'Checkout', 'url' => route('checkout')],
+            ['label' => 'Order Confirmed'],
+        ]" />
+
         <div class="rounded-xl border border-ink/10 p-10 text-center">
             <div class="mx-auto h-20 w-20 rounded-full bg-brand text-canvas grid place-items-center type-h1">✓</div>
             <h1 class="type-h1 mt-6">Payment Success!</h1>
             <p class="type-body text-ink/60 mt-2">Thank you for your order.</p>
+
+            <div class="mt-4 flex justify-center">
+                <x-store.status-badge :status="$order->status" />
+            </div>
 
             <div class="mt-8 rounded-xl bg-surface/40 p-6 text-left space-y-2">
                 <div class="flex justify-between type-body"><span>Order number</span><span class="font-bold">{{ $order->order_number }}</span></div>

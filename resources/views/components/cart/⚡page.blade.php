@@ -61,6 +61,11 @@ new class extends Component
 ?>
 
 <div class="container mx-auto py-10">
+    <x-store.breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('home')],
+        ['label' => 'Cart'],
+    ]" />
+
     <x-store.section-heading title="Your Cart" />
 
     @if ($cart->items->isEmpty())

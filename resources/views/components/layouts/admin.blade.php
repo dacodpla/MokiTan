@@ -20,6 +20,8 @@
             <nav class="flex items-center gap-4 type-body">
                 <a href="{{ route('admin.products.index') }}" class="hover:text-brand
                    {{ request()->routeIs('admin.products.*') ? 'text-brand font-bold' : '' }}">Products</a>
+                <a href="{{ route('admin.transactions.index') }}" class="hover:text-brand
+                   {{ request()->routeIs('admin.transactions.*') ? 'text-brand font-bold' : '' }}">Transactions</a>
                 <a href="{{ route('home') }}" class="hover:text-brand text-ink/60">← Store</a>
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf

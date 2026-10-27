@@ -85,9 +85,11 @@ new class extends Component
 ?>
 
 <div class="container mx-auto py-10">
-    <a href="{{ route('cart') }}" class="type-body text-brand hover:underline inline-flex items-center gap-1">
-        ← Back to Cart
-    </a>
+    <x-store.breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('home')],
+        ['label' => 'Cart', 'url' => route('cart')],
+        ['label' => 'Checkout'],
+    ]" />
 
     <x-store.section-heading title="Shipping & Personal Data" />
 

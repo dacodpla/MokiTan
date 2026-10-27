@@ -20,4 +20,20 @@ enum OrderStatus: string
             self::Delivered => 'Delivered',
         };
     }
+
+    /**
+     * Tailwind classes for the status badge. Stays within the DESIGN.md
+     * palette (brand/ink/surface/canvas) by varying fill vs. outline instead
+     * of introducing new hues.
+     */
+    public function badgeClasses(): string
+    {
+        return match ($this) {
+            self::Pending => 'bg-surface text-ink',
+            self::Paid => 'bg-brand text-canvas',
+            self::Failed => 'border border-brand text-brand',
+            self::Shipped => 'border border-ink text-ink',
+            self::Delivered => 'bg-ink text-canvas',
+        };
+    }
 }

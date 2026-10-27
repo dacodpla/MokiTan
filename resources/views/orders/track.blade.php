@@ -15,10 +15,16 @@
     <x-slot name="title">Track — {{ $order->order_number }}</x-slot>
 
     <div class="container mx-auto py-12 max-w-3xl">
-        <a href="{{ route('home') }}" class="type-body text-brand hover:underline">← Back to Homepage</a>
+        <x-store.breadcrumb :items="[
+            ['label' => 'Home', 'url' => route('home')],
+            ['label' => 'Track Order'],
+        ]" />
 
         <h1 class="type-h1 mt-4">Track your package</h1>
         <p class="type-body text-ink/60 mt-2">Order {{ $order->order_number }} · Tracking {{ $order->tracking_number ?? '—' }}</p>
+        <div class="mt-3">
+            <x-store.status-badge :status="$order->status" />
+        </div>
 
         <ol class="mt-10 space-y-3">
             @foreach ($steps as $i => $step)

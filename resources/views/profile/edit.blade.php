@@ -6,6 +6,11 @@
     <x-slot name="title">Your Account — Moki-Tan</x-slot>
 
     <div class="container mx-auto py-10">
+        <x-store.breadcrumb :items="[
+            ['label' => 'Home', 'url' => route('home')],
+            ['label' => 'Your Account'],
+        ]" />
+
         <x-store.section-heading title="Your Account" />
 
         <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_1fr]">
@@ -27,16 +32,18 @@
             @else
                 <ul class="divide-y divide-ink/10">
                     @foreach ($orders as $order)
-                        <li class="py-3 flex items-center justify-between">
+                        <li class="py-3 flex items-center justify-between gap-4">
                             <div>
                                 <div class="type-body font-bold">{{ $order->order_number }}</div>
                                 <div class="type-body text-ink/60 text-sm">
                                     {{ $order->created_at->format('d M Y') }}
-                                    · <span class="uppercase">{{ $order->status->label() }}</span>
                                     · {{ \App\Support\Money::idr($order->total) }}
                                 </div>
                             </div>
-                            <a href="{{ route('orders.track', $order) }}" class="type-body text-brand hover:underline">Track →</a>
+                            <div class="flex items-center gap-4">
+                                <x-store.status-badge :status="$order->status" />
+                                <a href="{{ route('orders.track', $order) }}" class="type-body text-brand hover:underline whitespace-nowrap">Track →</a>
+                            </div>
                         </li>
                     @endforeach
                 </ul>

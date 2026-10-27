@@ -1,4 +1,9 @@
 <x-layouts.admin title="Products">
+    <x-store.breadcrumb :items="[
+        ['label' => 'Admin', 'url' => route('admin.dashboard')],
+        ['label' => 'Products'],
+    ]" />
+
     <div class="flex items-center justify-between mb-6">
         <h1 class="type-h1">Products</h1>
         <a href="{{ route('admin.products.create') }}" class="btn-primary">+ New product</a>

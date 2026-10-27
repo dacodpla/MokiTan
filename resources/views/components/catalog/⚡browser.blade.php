@@ -75,6 +75,17 @@ new class extends Component
 ?>
 
 <div class="container mx-auto py-10">
+    @php
+        $breadcrumbItems = [
+            ['label' => 'Home', 'url' => route('home')],
+            ['label' => 'Catalog', 'url' => route('catalog')],
+        ];
+        if ($category !== '') {
+            $breadcrumbItems[] = ['label' => $categories->firstWhere('slug', $category)?->name ?? ucfirst($category)];
+        }
+    @endphp
+    <x-store.breadcrumb :items="$breadcrumbItems" />
+
     <x-store.section-heading title="{{ $category ? ucfirst($category) : 'All products' }} ({{ $products->total() }})" />
 
     <div class="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
