@@ -16,10 +16,16 @@
             @error('email') <p class="text-brand text-xs mt-1">{{ $message }}</p> @enderror
         </label>
 
-        <label class="block">
+        <label class="block" x-data="{ show: false }">
             <span class="type-body font-bold">Password</span>
-            <input id="password" name="password" type="password" required autocomplete="current-password"
-                   class="input-underline mt-1">
+            <div class="relative mt-1">
+                <input id="password" name="password" :type="show ? 'text' : 'password'" required
+                       autocomplete="current-password" class="input-underline pr-14">
+                <button type="button" @click="show = !show"
+                        class="absolute right-0 top-1/2 -translate-y-1/2 type-body text-xs font-bold text-ink/50 hover:text-brand">
+                    <span x-text="show ? 'Hide' : 'Show'"></span>
+                </button>
+            </div>
             @error('password') <p class="text-brand text-xs mt-1">{{ $message }}</p> @enderror
         </label>
 

@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -51,6 +52,7 @@ class ProductController extends Controller
     {
         $data = $this->validated($request, $product);
         if ($file = $this->handleImage($request)) {
+            $this->deleteImage($product->image_path);
             $data['image_path'] = $file;
         }
 
@@ -63,6 +65,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $this->deleteImage($product->image_path);
         $product->delete();
 
         return redirect()
@@ -140,5 +143,20 @@ class ProductController extends Controller
         $path = $request->file('image')->store('products', 'public');
 
         return 'storage/'.$path;
+    }
+
+    /**
+     * Remove a previously uploaded product image from the public disk.
+     * Only paths under the 'storage/' disk are deleted — this guards
+     * shared static assets (e.g. seeded placeholder SVGs) from being
+     * erased just because a product record referencing them changed.
+     */
+    private function deleteImage(?string $imagePath): void
+    {
+        if (! $imagePath || ! Str::startsWith($imagePath, 'storage/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(Str::after($imagePath, 'storage/'));
     }
 }
