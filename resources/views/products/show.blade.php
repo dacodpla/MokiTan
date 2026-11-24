@@ -18,6 +18,15 @@
                 <div class="type-body font-bold uppercase text-ink/60">{{ $product->brand }}</div>
                 <h1 class="type-h1 mt-1">{{ $product->name }}</h1>
                 <div class="type-h4 mt-3">{{ \App\Support\Money::idr($product->price) }}</div>
+                <div class="type-body mt-2 text-ink/70">
+                    {{ $product->category->name }}
+                    <span aria-hidden="true">·</span>
+                    @if ($product->stock > 0)
+                        Stok: <strong>{{ $product->stock }}</strong> tersedia
+                    @else
+                        <strong class="text-brand">Stok Habis</strong>
+                    @endif
+                </div>
 
                 <p class="type-body mt-6 text-ink-alt/80">{{ $product->description }}</p>
 

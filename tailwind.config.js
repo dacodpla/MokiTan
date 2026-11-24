@@ -7,6 +7,7 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
         './app/Livewire/**/*.php',
+        './app/Enums/**/*.php',
     ],
 
     theme: {
@@ -25,6 +26,14 @@ export default {
                 },
                 surface: '#d9d9d9',
                 canvas: '#ffffff',
+                status: {
+                    'pending-bg': '#fff3cd',
+                    'pending-fg': '#856404',
+                    'paid-bg': '#cfe2ff',
+                    'paid-fg': '#084298',
+                    'shipped-bg': '#d1e7dd',
+                    'shipped-fg': '#0f5132',
+                },
             },
             borderRadius: {
                 pill: '100px',

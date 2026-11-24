@@ -5,6 +5,9 @@
 @tailwind utilities;
 
 @layer base {
+    [x-cloak] {
+        display: none !important;
+    }
     html {
         @apply antialiased;
     }
@@ -33,6 +36,21 @@
     }
     .btn-outline {
         @apply btn-pill border border-ink bg-canvas text-ink hover:bg-ink hover:text-canvas;
+    }
+    .btn-success {
+        @apply btn-pill bg-status-shipped-fg text-canvas hover:opacity-90;
+    }
+    .btn-info {
+        @apply btn-pill bg-status-paid-fg text-canvas hover:opacity-90;
+    }
+    .btn-warning {
+        @apply btn-pill border border-status-pending-fg bg-status-pending-bg text-status-pending-fg hover:opacity-90;
+    }
+    .btn-danger {
+        @apply btn-pill border border-brand bg-canvas text-brand hover:bg-brand hover:text-canvas;
+    }
+    .btn-sm {
+        @apply px-3 py-1.5 text-sm;
     }
 
     .section-heading {

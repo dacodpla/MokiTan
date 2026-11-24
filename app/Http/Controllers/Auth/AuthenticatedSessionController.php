@@ -28,6 +28,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return redirect()
+                ->intended(route('admin.transactions.index', absolute: false))
+                ->with('status', "Selamat datang kembali di Seller Center, {$user->name}!");
+        }
+
         return redirect()->intended(route('home', absolute: false));
     }
 

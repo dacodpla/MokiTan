@@ -23,9 +23,10 @@
                 <a href="{{ route('admin.transactions.index') }}" class="hover:text-brand
                    {{ request()->routeIs('admin.transactions.*') ? 'text-brand font-bold' : '' }}">Transactions</a>
                 <a href="{{ route('home') }}" class="hover:text-brand text-ink/60">← Store</a>
+                <span class="hidden sm:inline text-ink/60">Seller: <strong class="text-ink">{{ auth()->user()->name }}</strong></span>
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf
-                    <button type="submit" class="hover:text-brand text-ink/60">Logout</button>
+                    <button type="submit" class="btn-danger btn-sm">Keluar</button>
                 </form>
             </nav>
         </div>

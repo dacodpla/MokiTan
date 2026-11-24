@@ -1,12 +1,12 @@
 # Moki-Tan
 
-A full-stack e-commerce storefront for model kits, paints, tools, materials, and accessories. Built as a demo/portfolio app with a mocked payment flow so both the success and failure branches of the user journey can be exercised without any external accounts.
+A full-stack e-commerce store for model kits, paints, tools and materials, with a role-based Seller Center for the shop owner.
 
 - **Framework:** Laravel 13 (PHP 8.3)
 - **Frontend:** Tailwind CSS 3 + Livewire 4 (single-file components) + Alpine.js
-- **Auth:** Laravel Breeze (Blade)
+- **Auth:** Laravel Breeze (Blade) with two roles: `customer` and `admin`
 - **Database:** MySQL 8 by default (any Laravel-supported driver works)
-- **Payment:** Fake gateway with a deterministic failure path
+- **Orders:** every checkout creates a **Pending** order and takes stock; the admin confirms payment (Paid) and ships it (Shipped, with a tracking number)
 
 ---
 
@@ -60,7 +60,7 @@ DB_PASSWORD=
 Finally:
 
 ```bash
-# 4. Run migrations + seeder (5 categories + test user)
+# 4. Run migrations + seeder (categories + test accounts)
 php artisan migrate --seed
 
 # 5. Make uploaded product images publicly served
@@ -74,131 +74,119 @@ npm run build      # production build
 
 Prefer SQLite/Postgres instead? Edit `DB_CONNECTION` and matching `DB_*` values in `.env`, then run `migrate --seed` — no schema changes required.
 
+### Importing an existing `.sql` dump instead
+
+Create the `mokitan` database, import the dump (phpMyAdmin → Import, or `mysql -u root mokitan < dump.sql`), set `.env` as above, run `php artisan storage:link`, and you're done — no `migrate` needed.
+
 ### Start the app
 
-In one terminal:
-
 ```bash
-php artisan serve
+php artisan serve        # then open http://127.0.0.1:8000
+npm run dev              # optional, only for hot reload
 ```
 
-In another (only if you want hot reload):
+---
 
-```bash
-npm run dev
-```
+## Test accounts
 
-Open <http://127.0.0.1:8000>.
+The seeder creates these (it is safe to re-run with `php artisan db:seed`; it never deletes anything):
 
-### Default credentialsle
+| Role     | Email                | Password      |
+| -------- | -------------------- | ------------- |
+| Admin    | `admin@mokitan.com`  | `admin123`    |
+| Customer | `budi@mokitan.com`   | `customer123` |
+| Customer | `siti@mokitan.com`   | `customer123` |
 
-The seeder creates one user for testing:
-
-| Email                | Password   |
-| -------------------- | ---------- |
-| `test@example.com`   | `password` |
-
-Any logged-in user can also reach the admin panel — there's no role table yet.
+- The seeder also gives **Siti** one demo order (once at least one product exists), so you can show that Budi gets a **403** on her invoice.
+- New sign-ups through `/register` are **always customers**. The `role` column is deliberately not mass-assignable, so a request can never promote itself to admin — admins only come from the seeder.
 
 ---
 
-## What ships in the seed
+## Who can do what
 
-The database starts **empty of products**. Only the five categories used by the header nav are seeded:
+| Area                                           | Guest               | Customer            | Admin    |
+| ---------------------------------------------- | ------------------- | ------------------- | -------- |
+| Home, catalog, product pages                   | yes                 | yes                 | yes      |
+| Add to cart, cart, checkout, Pesanan Saya      | redirected to login | yes                 | yes      |
+| Own invoice / tracking (`/orders/{id}/...`)    | redirected to login | yes (only their own, others get **403**) | any invoice |
+| Seller Center (`/admin/...`)                   | redirected to login | **403**             | yes      |
 
-- Kits
-- Tools
-- Materials
-- Paints
-- Other
-
-Add your own products through the admin panel (below).
-
----
-
-## Admin panel
-
-Once logged in, click **Admin** in the site header (or go straight to `/admin`).
-
-### Add a product
-
-1. `/admin/products` → **+ New product**
-2. Fill in name, brand, category, price (whole rupiah — e.g. `430000` for Rp 430,000), stock
-3. Optionally upload a product image (JPEG/PNG/WebP, ≤ 4 MB — stored under `storage/app/public/products/`)
-4. Optionally add specifications as key/value pairs (e.g. `scale` → `1/48`, `pieces` → `214`)
-5. Tick **Featured on homepage** to promote it into the hero slot
-6. **Create product** — you'll land on the edit page, where you can also link add-ons
-
-### Link "Quick Add" bundles
-
-On the product edit page, the **Recommended add-ons** section lists every other product with a live-syncing checkbox:
-
-- Ticking a checkbox immediately writes to the `product_recommendations` pivot
-- The linked products appear on the public product page as "Recommended tools & materials"
-- They also become the bundle options inside the **Quick Add** modal for that product
-
-There's a search + category filter to make picking easy when the catalog grows.
-
-### Edit / delete
-
-- **Edit** — same form as create, plus the recommendations panel
-- **Delete** — button in the products list; asks for confirmation
+This is enforced by the `auth` middleware plus the `admin` middleware alias ([`AdminMiddleware`](app/Http/Middleware/AdminMiddleware.php), registered in `bootstrap/app.php`), not just by hiding buttons.
 
 ---
 
-## Storefront tour
+## How an order works
 
-| Route                        | What it does                                                                 |
-| ---------------------------- | ----------------------------------------------------------------------------- |
-| `/`                          | Home: featured product hero, "New in Stock" grid, "Show me more!", categories |
-| `/catalog`                   | Full catalog with live search, category filter, brand filter, sort            |
-| `/catalog/{category-slug}`   | Catalog scoped to one category (e.g. `/catalog/kits`)                         |
-| `/products/{product-slug}`   | Product detail, Add to Cart, Quick Add bundle, gift-note toggle              |
-| `/cart`                      | Cart page with qty +/-, remove, per-item gift wrap toggle                    |
-| `/checkout`                  | Shipping form → payment modal                                                 |
-| `/orders/{id}/success`       | Success screen with tracking number                                          |
-| `/orders/{id}/track`         | Status timeline (Pending → Paid → Shipped → Delivered)                       |
-| `/login`, `/register`        | Breeze auth pages, restyled                                                  |
-| `/profile`                   | Profile edit + order history                                                 |
-| `/admin/*`                   | Admin panel (auth-guarded)                                                   |
+1. A logged-in customer adds products to the cart. Quantities can never exceed real stock (including what is already in the cart). A product with stock 0 shows **Stok Habis** and its buy button is disabled.
+2. At `/checkout` they enter shipping details and pick a courier (JNE Reguler Rp 20.000, J&T Express Rp 18.000, SiCepat BEST Rp 15.000). The recipient name is pre-filled from their account.
+3. **Place order** runs [`CheckoutService`](app/Services/CheckoutService.php) in one database transaction: it re-checks stock against locked rows, creates the order as **Pending** with the customer's `user_id`, decrements stock, and empties the cart. If stock is short, nothing is saved and the form shows the error with the input intact.
+4. The customer lands on their invoice, and the order appears under **Pesanan Saya** (`/pesanan-saya`).
+5. In the Seller Center the admin sets the order to **Paid**, then **Shipped** (a tracking number is required for Shipped). The status badge changes colour everywhere: Pending = yellow, Paid = blue, Shipped = green.
 
 ---
 
-## Payment demo
+## Seller Center (admin)
 
-The [`FakePaymentGateway`](app/Services/FakePaymentGateway.php) is bound in [`AppServiceProvider`](app/Providers/AppServiceProvider.php). No external accounts are needed. In the payment modal:
+Log in as the admin and use **Panel Seller Center** in the header (or go to `/admin`).
 
-- Enter any card number **12–19 digits**
-- Expiration in `MM/YY` format
-- CVC = 3 digits
+### Transactions — `/admin/transactions`
 
-**Behaviour:**
+- Four live statistic cards: **Total Produk**, **Pesanan Pending**, **Pesanan Paid + Shipped**, **Total Omzet Bersih**.
+- **Total Omzet Bersih only adds up Paid and Shipped orders.** Pending orders are never counted.
+- Filter tabs: Semua / Pending / Paid / Shipped.
+- Per order: change status, enter the tracking number (resi), open the customer's invoice, or **delete** it (with a confirmation). Deleting a *Pending* order returns its stock to the shelf; deleting a Paid/Shipped order does not.
 
-| Card ends in | Result                                                          |
-| ------------ | ---------------------------------------------------------------- |
-| `0000`       | Fails — shows the "Gagal — Coba Lagi" banner, cart preserved    |
-| anything else| Succeeds — order created, cart emptied, redirected to success   |
+### Products — `/admin/products`
 
-Try `4242 4242 4242 4242` for a success and `4242 4242 4242 0000` for the failure path.
+1. **+ New product**: name, brand, **category**, price (whole rupiah, e.g. `430000`), **stock** (min 0), description, image (JPEG/PNG/WebP, up to 4 MB, stored in `storage/app/public/products/`), optional specifications and the *Featured* flag.
+2. **Edit** pre-fills everything. Replacing an image deletes the old file; deleting a product deletes its image.
+3. **Recommended add-ons** (on the edit page) link products together. Linked products appear on the public product page and feed its **Quick Add** modal, which sorts them by category: *I'm completely new* (kit + every linked tool, material and paint), *Restock on essentials* (kit + linked **Materials**) and *With the paints* (kit + linked **Paints**). Linked items in the **Other** category are never part of a preset; they show up as an *Optional accessories* checklist in the same modal. So give add-ons the right category. In the cart, everything quick-added sits inside its kit's line and expands like a folder.
+
+---
+
+## Storefront routes
+
+| Route                       | What it does                                                         |
+| --------------------------- | -------------------------------------------------------------------- |
+| `/`                         | Home: featured product, "New in Stock", category tiles               |
+| `/catalog`                  | Catalog with live search, category filter, brand filter, sort        |
+| `/catalog/{category-slug}`  | Catalog scoped to one category                                       |
+| `/detail/{id}`              | Product detail (real stock, 404 for an unknown id), Add to Cart, Quick Add, gift note |
+| `/cart`                     | Cart (login required)                                                |
+| `/checkout`                 | Shipping + courier, places a Pending order (login required)          |
+| `/pesanan-saya`             | The signed-in customer's own orders, newest first                    |
+| `/orders/{id}/success`      | Invoice (owner or admin only)                                        |
+| `/orders/{id}/track`        | Status timeline Pending → Paid → Shipped (owner or admin only)       |
+| `/login`, `/register`       | Auth pages                                                           |
+| `/profile`                  | Profile edit                                                         |
+| `/admin/...`                | Seller Center (admin only)                                           |
+
+The header adapts to the visitor: guests see **Masuk / Daftar**, customers see **Halo, [Nama]** + **Pesanan Saya** + **Keluar**, admins see **Seller: [Nama]** + **Panel Seller Center** + **Keluar**. Logout is a `POST` form with `@csrf`.
 
 ---
 
 ## Design system
 
-Tokens are defined in [`tailwind.config.js`](tailwind.config.js) and [`resources/css/app.css`](resources/css/app.css). Reuse them instead of hard-coding values:
+Tokens live in [`tailwind.config.js`](tailwind.config.js) and [`resources/css/app.css`](resources/css/app.css). Reuse them instead of hard-coding values:
 
-| Token         | Value        | Usage                                        |
-| ------------- | ------------ | --------------------------------------------- |
-| `brand`       | `#bc002d`    | Primary accent (buttons, headings underline) |
-| `brand-hover` | `#a30028`    | Hover state for brand-red surfaces           |
-| `ink`         | `#000000`    | Primary text                                 |
-| `ink-alt`     | `#16161d`    | Softer black (footers, deep surfaces)        |
-| `surface`     | `#d9d9d9`    | Placeholder / neutral surfaces               |
-| `canvas`      | `#ffffff`    | Page background                              |
+| Token                    | Value                 | Usage                                  |
+| ------------------------ | --------------------- | -------------------------------------- |
+| `brand`                  | `#bc002d`             | Primary accent (buttons, underlines)   |
+| `brand-hover`            | `#a30028`             | Hover state for brand surfaces         |
+| `ink` / `ink-alt`        | `#000000` / `#16161d` | Text, deep surfaces                    |
+| `surface`                | `#d9d9d9`             | Placeholder / neutral surfaces         |
+| `canvas`                 | `#ffffff`             | Page background                        |
+| `status-pending-*`       | `#fff3cd` / `#856404` | Pending badge (yellow)                 |
+| `status-paid-*`          | `#cfe2ff` / `#084298` | Paid badge (blue), `btn-info`          |
+| `status-shipped-*`       | `#d1e7dd` / `#0f5132` | Shipped badge (green), `btn-success`   |
 
-**Signature shape:** the `.shape-card` utility sets `border-radius: 10px` on three corners and leaves the **top-right corner square**. Used on product cards, category tiles, the "Show me more!" button, buttons, and the featured image — this is Moki-Tan's asymmetric card motif. Keep applying it to any new container.
+Buttons: `btn-primary` (brand), `btn-success`, `btn-info`, `btn-warning`, `btn-danger`, `btn-outline`, `btn-secondary`, plus `btn-sm`.
 
-**Font:** Instrument Sans (loaded from Google Fonts in `app.css`). Type utilities: `.type-display`, `.type-h1`…`.type-h5`, `.type-body`.
+**Signature shape:** `.shape-card` gives `border-radius: 10px` on three corners and leaves the **top-right corner square**. Keep using it on new containers and buttons.
+
+**Font:** Instrument Sans (Google Fonts, loaded in `app.css`).
+
+> Tailwind scans `app/Enums` too, because the status badge classes live in the `OrderStatus` enum.
 
 ---
 
@@ -208,54 +196,47 @@ Notable paths (everything else is stock Laravel):
 
 ```
 app/
-├── Enums/OrderStatus.php              # Pending → Paid → Shipped → Delivered (+ Failed)
-├── Http/Controllers/
-│   ├── HomeController.php             # Storefront home
-│   ├── ProductController.php          # Product detail
-│   ├── CartController.php             # Cart page shell (Livewire inside)
-│   ├── CheckoutController.php         # Checkout gate (redirects if cart empty)
-│   ├── OrderController.php            # Order success + tracking
-│   └── Admin/ProductController.php    # Full admin CRUD
-├── Models/                            # Category, Product, Cart, CartItem, Order, OrderItem, Address
-├── Services/
-│   ├── PaymentGateway.php             # Interface
-│   ├── PaymentResult.php              # DTO
-│   └── FakePaymentGateway.php         # Deterministic mock (fails on cards ending 0000)
-└── Support/Money.php                   # Money::idr() — formats "Rp 430.000"
+├── Enums/
+│   ├── OrderStatus.php                # Pending / Paid / Shipped + badge classes + revenue statuses
+│   └── Courier.php                    # Courier names + flat shipping fees
+├── Http/
+│   ├── Middleware/AdminMiddleware.php # 403 unless the user is an admin
+│   └── Controllers/
+│       ├── HomeController.php, ProductController.php, CartController.php, CheckoutController.php
+│       ├── OrderController.php        # Pesanan Saya, invoice, tracking (+ ownership check)
+│       └── Admin/                     # ProductController (CRUD + image cleanup), TransactionController
+├── Models/                            # User (isAdmin), Category, Product, Cart, CartItem, Order, OrderItem, Address
+├── Services/CheckoutService.php       # Cart → Pending order, stock check + decrement, in one transaction
+└── Support/Money.php                  # Money::idr() — formats "Rp 430.000"
+
+database/
+├── migrations/                        # add_role_to_users, add_courier_to_orders are the newest
+├── factories/                         # incl. OrderFactory (paid()/shipped() states), UserFactory::admin()
+└── seeders/DatabaseSeeder.php         # Idempotent: admin + 2 customers + categories + a demo order
 
 resources/views/
-├── components/
-│   ├── layouts/
-│   │   ├── store.blade.php            # Storefront layout wrapper
-│   │   └── admin.blade.php            # Admin layout wrapper
-│   ├── store/                         # header, footer, product-card, category-tile, section-heading
-│   ├── header/⚡cart-icon.blade.php   # Livewire SFC — reactive cart badge
-│   ├── catalog/⚡browser.blade.php    # Livewire SFC — filters / search / pagination
-│   ├── product/                       # ⚡add-to-cart, ⚡quick-add, ⚡gift-toggle (Livewire SFCs)
-│   ├── cart/⚡page.blade.php          # Livewire SFC — cart with qty & remove
-│   ├── checkout/                      # ⚡personal-data, ⚡payment (Livewire SFCs)
-│   └── admin/⚡recommendations.blade.php  # Livewire SFC — link products live
-├── home.blade.php, catalog/, products/, cart/, checkout/, orders/
-└── admin/products/                    # index, create, edit, _form partial
+├── components/layouts/                # store.blade.php, admin.blade.php
+├── components/store/                  # header, footer, product-card, breadcrumb, status-badge, ...
+├── components/{header,catalog,product,cart,checkout,admin}/  # Livewire single-file components (⚡*.blade.php)
+├── errors/                            # 403 and 404 pages
+├── orders/, products/, catalog/, cart/, checkout/, profile/, auth/
+└── admin/{products,transactions}/
 
-public/img/
-├── logo/                              # MokiTan.svg (dark) + MokiTanLT.svg (light)
-├── categories/                        # Background SVGs per category slug
-└── products/                          # (Optional) fallback placeholders
-
-routes/web.php                          # All routes (storefront + admin + Breeze auth)
+tests/Feature/                         # AccessControlTest, CheckoutTest, AdminTransactionTest (+ Breeze tests)
+routes/web.php                         # public / auth / auth+admin route groups
 ```
 
-**Livewire 4 note:** components are single-file — PHP class + Blade template together in one `⚡name.blade.php` file under `resources/views/components/<group>/`. Reference them from other views as `<livewire:group.name />`.
+**Livewire 4 note:** components are single-file — the PHP class and Blade template live together in `⚡name.blade.php` under `resources/views/components/<group>/`. Reference them as `<livewire:group.name />`.
 
 ---
 
 ## Useful commands
 
 ```bash
-php artisan test                 # run the PHPUnit test suite
-php artisan route:list           # inspect all routes
-php artisan migrate:fresh --seed # wipe DB and reseed the 5 categories + test user
+php artisan test --compact       # run the whole suite (in-memory SQLite, never touches MySQL)
+php artisan route:list           # inspect routes + middleware
+php artisan db:seed              # safe to re-run: (re)creates accounts + categories, deletes nothing
+php artisan optimize:clear       # clear route/config/view caches
 php artisan storage:link         # (rerun if you delete public/storage)
 
 npm run dev                      # Vite dev server with hot reload
@@ -264,6 +245,8 @@ npm run build                    # production asset build
 vendor/bin/pint --dirty          # format changed PHP with Laravel Pint
 ```
 
+> **Do not run `php artisan migrate:fresh` once you have real products and orders** — it drops every table. Export a backup first (`mysqldump -u root mokitan > backup.sql`) and add new migrations instead of editing old ones.
+
 ---
 
 ## Troubleshooting
@@ -271,9 +254,10 @@ vendor/bin/pint --dirty          # format changed PHP with Laravel Pint
 - **"Unable to locate file in Vite manifest"** — run `npm run build` (or start `npm run dev`).
 - **"No application encryption key has been specified."** — run `php artisan key:generate`.
 - **Uploaded images return 404** — you skipped `php artisan storage:link`.
-- **Login redirects to `/dashboard` and 500s** — the Breeze `AuthenticatedSessionController` has been changed to redirect to `home` in this app; if you re-published Breeze, re-apply that edit.
-- **Cart items pointing at deleted products** — the pivot cascades on delete; if you get stale data, `php artisan migrate:fresh --seed`.
-- **`SQLSTATE[HY000] [2002] Can't connect to MySQL`** — MySQL isn't running. Start it via Laragon (**Start All**) or your service manager. Verify with `mysql -u root -e "SELECT VERSION();"`.
+- **A status badge or button has no colour** — rebuild assets (`npm run build`); Tailwind only generates classes it finds while scanning.
+- **I get a 403 on `/admin/...`** — you are signed in as a customer. Log in as `admin@mokitan.com`. If the admin was created some other way, check `users.role = 'admin'`.
+- **Admin from the seeder can't log in** — run `php artisan db:seed` (it also resets the seeded passwords).
+- **`SQLSTATE[HY000] [2002] Can't connect to MySQL`** — MySQL isn't running. Start it via Laragon (**Start All**) or your service manager.
 - **`SQLSTATE[HY000] [1049] Unknown database 'mokitan'`** — you skipped the `CREATE DATABASE mokitan` step in setup.
 
 ---

@@ -3,7 +3,6 @@
         \App\Enums\OrderStatus::Pending,
         \App\Enums\OrderStatus::Paid,
         \App\Enums\OrderStatus::Shipped,
-        \App\Enums\OrderStatus::Delivered,
     ];
     $currentIndex = array_search($order->status, $steps, true);
     if ($currentIndex === false) {
@@ -17,11 +16,16 @@
     <div class="container mx-auto py-12 max-w-3xl">
         <x-store.breadcrumb :items="[
             ['label' => 'Home', 'url' => route('home')],
-            ['label' => 'Track Order'],
+            ['label' => 'Pesanan Saya', 'url' => route('orders.index')],
+            ['label' => 'Track '.$order->order_number],
         ]" />
 
         <h1 class="type-h1 mt-4">Track your package</h1>
-        <p class="type-body text-ink/60 mt-2">Order {{ $order->order_number }} · Tracking {{ $order->tracking_number ?? '—' }}</p>
+        <p class="type-body text-ink/60 mt-2">
+            Invoice {{ $order->order_number }}
+            · Courier {{ $order->courier?->value ?? '—' }}
+            · Tracking {{ $order->tracking_number ?? '—' }}
+        </p>
         <div class="mt-3">
             <x-store.status-badge :status="$order->status" />
         </div>
@@ -35,7 +39,6 @@
                     </span>
                     <div>
                         <div class="type-body font-bold">{{ $step->label() }}</div>
-                        <div class="type-body text-ink/60 text-sm">{{ ucfirst($step->value) }}</div>
                     </div>
                 </li>
             @endforeach

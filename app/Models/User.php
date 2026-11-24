@@ -18,6 +18,15 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /**
+     * The role is deliberately NOT in #[Fillable]: no request payload can ever
+     * promote an account to admin. Admins are created by the seeder only.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::class);

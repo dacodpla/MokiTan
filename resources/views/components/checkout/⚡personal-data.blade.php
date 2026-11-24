@@ -1,7 +1,10 @@
 <?php
 
+use App\Enums\Courier;
 use App\Models\Cart;
+use App\Services\CheckoutService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 new class extends Component
@@ -20,65 +23,61 @@ new class extends Component
 
     public string $postal_code = '';
 
-    public bool $showPayment = false;
+    public string $courier = '';
 
     public function mount(): void
     {
-        if (Auth::check()) {
-            $addr = Auth::user()->defaultAddress();
-            $this->recipient_name = $addr->recipient_name ?? Auth::user()->name;
-            $this->phone = $addr->phone ?? Auth::user()->phone ?? '';
-            $this->line1 = $addr->line1 ?? '';
-            $this->line2 = $addr->line2 ?? '';
-            $this->city = $addr->city ?? '';
-            $this->province = $addr->province ?? '';
-            $this->postal_code = $addr->postal_code ?? '';
-        }
+        $user = Auth::user();
+        $address = $user->defaultAddress();
+
+        $this->recipient_name = $address->recipient_name ?? $user->name;
+        $this->phone = $address->phone ?? $user->phone ?? '';
+        $this->line1 = $address->line1 ?? '';
+        $this->line2 = $address->line2 ?? '';
+        $this->city = $address->city ?? '';
+        $this->province = $address->province ?? '';
+        $this->postal_code = $address->postal_code ?? '';
+        $this->courier = Courier::JneReguler->value;
     }
 
-    public function proceedToPayment(): void
+    /**
+     * Validation errors thrown by CheckoutService (empty cart, not enough stock)
+     * are caught by Livewire and shown through @error, so the form keeps its input.
+     */
+    public function placeOrder(CheckoutService $checkout): void
     {
-        $this->validate([
+        $validated = $this->validate([
             'recipient_name' => 'required|string|max:120',
             'phone' => 'required|string|max:30',
             'line1' => 'required|string|max:200',
+            'line2' => 'nullable|string|max:200',
             'city' => 'required|string|max:80',
             'province' => 'required|string|max:80',
             'postal_code' => 'required|string|max:20',
+            'courier' => ['required', Rule::enum(Courier::class)],
         ]);
 
-        if (Auth::check()) {
-            Auth::user()->addresses()->updateOrCreate(
-                ['is_default' => true],
-                [
-                    'recipient_name' => $this->recipient_name,
-                    'phone' => $this->phone,
-                    'line1' => $this->line1,
-                    'line2' => $this->line2,
-                    'city' => $this->city,
-                    'province' => $this->province,
-                    'postal_code' => $this->postal_code,
-                ],
-            );
-        }
+        $shipping = collect($validated)->except('courier')->all();
 
-        session(['checkout.shipping' => [
-            'recipient_name' => $this->recipient_name,
-            'phone' => $this->phone,
-            'line1' => $this->line1,
-            'line2' => $this->line2,
-            'city' => $this->city,
-            'province' => $this->province,
-            'postal_code' => $this->postal_code,
-        ]]);
+        $order = $checkout->placeOrder(
+            Auth::user(),
+            Cart::current(),
+            $shipping,
+            Courier::from($validated['courier']),
+        );
 
-        $this->showPayment = true;
+        Auth::user()->addresses()->updateOrCreate(['is_default' => true], $shipping);
+
+        $this->dispatch('cart:updated');
+        $this->redirect(route('orders.success', $order), navigate: true);
     }
 
     public function with(): array
     {
         return [
             'cart' => Cart::current()->load('items.product'),
+            'couriers' => Courier::cases(),
+            'shippingFee' => Courier::tryFrom($this->courier)?->fee() ?? 0,
         ];
     }
 };
@@ -94,7 +93,14 @@ new class extends Component
     <x-store.section-heading title="Shipping & Personal Data" />
 
     <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
-        <form wire:submit.prevent="proceedToPayment" class="space-y-5 rounded-xl border border-ink/10 p-6">
+        <form wire:submit.prevent="placeOrder" class="space-y-5 rounded-xl border border-ink/10 p-6">
+            @if ($errors->has('stock') || $errors->has('cart'))
+                <div class="shape-card border border-brand bg-brand/5 p-4 type-body text-brand" role="alert">
+                    @error('stock') <p>{{ $message }}</p> @enderror
+                    @error('cart') <p>{{ $message }}</p> @enderror
+                </div>
+            @endif
+
             <div class="grid gap-4 md:grid-cols-2">
                 <label class="block">
                     <span class="type-body font-bold">Recipient name</span>
@@ -136,7 +142,25 @@ new class extends Component
                 </label>
             </div>
 
-            <button type="submit" class="btn-primary w-full">Continue to payment</button>
+            <label class="block">
+                <span class="type-body font-bold">Courier</span>
+                <select wire:model.live="courier" class="input-underline mt-1">
+                    @foreach ($couriers as $option)
+                        <option value="{{ $option->value }}">
+                            {{ $option->value }} — {{ \App\Support\Money::idr($option->fee()) }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('courier') <p class="text-brand text-xs mt-1">{{ $message }}</p> @enderror
+            </label>
+
+            <button type="submit" class="btn-primary w-full" wire:loading.attr="disabled" wire:target="placeOrder">
+                <span wire:loading.remove wire:target="placeOrder">Place order</span>
+                <span wire:loading wire:target="placeOrder">Placing order…</span>
+            </button>
+            <p class="text-xs text-ink/50 text-center">
+                Your order starts as <strong>Pending</strong> until the seller confirms your payment.
+            </p>
         </form>
 
         <aside class="h-fit rounded-xl border border-ink/10 p-6 sticky top-6 space-y-4">
@@ -153,15 +177,11 @@ new class extends Component
                 <span>Subtotal</span><span class="font-bold">{{ \App\Support\Money::idr($cart->subtotal()) }}</span>
             </div>
             <div class="flex justify-between type-body">
-                <span>Shipping</span><span class="font-bold">{{ \App\Support\Money::idr(20000) }}</span>
+                <span>Shipping</span><span class="font-bold">{{ \App\Support\Money::idr($shippingFee) }}</span>
             </div>
             <div class="flex justify-between type-h4 border-t border-ink/10 pt-3">
-                <span>Total</span><span>{{ \App\Support\Money::idr($cart->subtotal() + 20000) }}</span>
+                <span>Total</span><span>{{ \App\Support\Money::idr($cart->subtotal() + $shippingFee) }}</span>
             </div>
         </aside>
     </div>
-
-    @if ($showPayment)
-        <livewire:checkout.payment />
-    @endif
 </div>

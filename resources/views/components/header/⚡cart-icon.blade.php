@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Cart;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -16,7 +17,7 @@ new class extends Component
     #[On('cart:updated')]
     public function refreshCount(): void
     {
-        $this->count = Cart::current()->totalQuantity();
+        $this->count = Auth::check() ? Cart::current()->totalQuantity() : 0;
     }
 };
 ?>

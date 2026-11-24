@@ -18,7 +18,16 @@
                 </svg>
             </span>
         </div>
-        <div class="mt-6 flex items-end justify-between">
+        <div class="mt-1 text-sm text-canvas/80">
+            {{ $product->category?->name }}
+            <span aria-hidden="true">·</span>
+            @if ($product->stock > 0)
+                Stok: {{ $product->stock }}
+            @else
+                <strong>Stok Habis</strong>
+            @endif
+        </div>
+        <div class="mt-4 flex items-end justify-between">
             <div class="type-body font-medium uppercase tracking-wide text-canvas/85">{{ $product->brand }}</div>
             <div class="type-body font-bold">{{ number_format((int) $product->price, 0, ',', '.') }}</div>
         </div>

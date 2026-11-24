@@ -22,6 +22,14 @@ class Cart extends Model
         return $this->hasMany(CartItem::class);
     }
 
+    /**
+     * Cart lines as the shopper sees them: bundled items sit inside their kit.
+     */
+    public function lines(): HasMany
+    {
+        return $this->items()->whereNull('parent_id');
+    }
+
     public static function current(): self
     {
         $userId = Auth::id();
@@ -41,6 +49,11 @@ class Cart extends Model
     public function totalQuantity(): int
     {
         return (int) $this->items()->sum('quantity');
+    }
+
+    public function quantityOf(int $productId): int
+    {
+        return (int) $this->items()->where('product_id', $productId)->sum('quantity');
     }
 
     public function subtotal(): int

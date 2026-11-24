@@ -16,8 +16,8 @@
             <a href="{{ route('admin.products.create') }}" class="btn-primary">Create product</a>
         </div>
     @else
-        <div class="shape-card border border-ink/10 overflow-hidden">
-            <table class="w-full text-left type-body">
+        <div class="shape-card border border-ink/10 overflow-x-auto">
+            <table class="w-full min-w-[720px] text-left type-body">
                 <thead class="bg-surface/50">
                     <tr>
                         <th class="p-3">Name</th>
@@ -46,19 +46,21 @@
                             <td class="p-3">{{ $product->category?->name ?? '—' }}</td>
                             <td class="p-3">{{ $product->brand }}</td>
                             <td class="p-3 text-right font-bold">{{ \App\Support\Money::idr($product->price) }}</td>
-                            <td class="p-3 text-right">{{ $product->stock }}</td>
+                            <td class="p-3 text-right {{ $product->stock < 1 ? 'font-bold text-brand' : '' }}">
+                                {{ $product->stock < 1 ? 'Habis' : $product->stock }}
+                            </td>
                             <td class="p-3">
                                 @if ($product->is_featured)
                                     <span class="inline-block bg-brand text-canvas px-2 py-0.5 text-xs font-bold rounded">FEATURED</span>
                                 @endif
                             </td>
                             <td class="p-3 text-right whitespace-nowrap">
-                                <a href="{{ route('admin.products.edit', $product) }}" class="text-brand hover:underline mr-3">Edit</a>
+                                <a href="{{ route('admin.products.edit', $product) }}" class="btn-info btn-sm">Edit</a>
                                 <form method="POST" action="{{ route('admin.products.destroy', $product) }}"
-                                      class="inline" onsubmit="return confirm('Delete this product?')">
+                                      class="inline" onsubmit="return confirm('Hapus produk {{ addslashes($product->name) }}? Tindakan ini tidak bisa dibatalkan.')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-ink/50 hover:text-brand">Delete</button>
+                                    <button type="submit" class="btn-danger btn-sm ml-1">Delete</button>
                                 </form>
                             </td>
                         </tr>

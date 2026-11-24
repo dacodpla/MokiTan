@@ -13,7 +13,7 @@ class HomeController extends Controller
         return view('home', [
             'featured' => Product::where('is_featured', true)->latest()->first(),
             'categories' => Category::orderBy('sort_order')->get(),
-            'newInStock' => Product::latest()->take(8)->get(),
+            'newInStock' => Product::with('category')->latest()->take(8)->get(),
         ]);
     }
 }

@@ -24,7 +24,43 @@
     @scroll.window.passive="onScroll()"
     :class="show ? 'translate-y-0' : '-translate-y-full'"
     class="sticky top-0 z-40 transition-transform duration-300 ease-out will-change-transform">
-    <div class="container mx-auto pt-8 pb-6">
+    {{-- Role-aware utility strip: guest / customer / admin --}}
+    <div class="container mx-auto pt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 type-body text-sm">
+        <div class="flex items-center gap-5">
+            <a href="{{ route('catalog') }}" class="font-bold hover:text-brand transition">Katalog</a>
+            <form action="{{ route('catalog') }}" method="GET" role="search" class="w-44 sm:w-64">
+                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search kits, paints, brands..."
+                       aria-label="Search products" class="input-underline py-1 text-sm">
+            </form>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            @guest
+                <span>
+                    <a href="{{ route('login') }}" class="font-bold hover:text-brand transition">Masuk</a>
+                    <span class="text-ink/30">/</span>
+                    <a href="{{ route('register') }}" class="font-bold hover:text-brand transition">Daftar</a>
+                </span>
+            @endguest
+
+            @auth
+                @if (auth()->user()->isAdmin())
+                    <span>Seller: <strong>{{ auth()->user()->name }}</strong></span>
+                    <a href="{{ route('admin.dashboard') }}" class="btn-primary btn-sm">Panel Seller Center</a>
+                @else
+                    <span>Halo, <strong>{{ auth()->user()->name }}</strong></span>
+                    <a href="{{ route('orders.index') }}" class="font-bold hover:text-brand transition">Pesanan Saya</a>
+                @endif
+
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="font-bold text-ink/60 hover:text-brand transition">Keluar</button>
+                </form>
+            @endauth
+        </div>
+    </div>
+
+    <div class="container mx-auto pt-5 pb-6">
         {{-- Logo, centered --}}
         <div class="flex justify-center">
             <a href="{{ route('home') }}" class="inline-block">
@@ -43,11 +79,6 @@
             @endforeach
 
             <div class="ml-4 flex items-center gap-3">
-                @auth
-                    <a href="{{ route('admin.dashboard') }}"
-                       class="type-body font-bold text-ink/70 hover:text-brand transition"
-                       title="Admin panel">Admin</a>
-                @endauth
                 <livewire:header.cart-icon />
                 <a href="{{ Auth::check() ? route('profile.edit') : route('login') }}"
                    class="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink/40 hover:border-brand hover:text-brand transition"
